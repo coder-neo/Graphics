@@ -1,0 +1,11 @@
+﻿Build started 11/17/2015 10:32:19 PM.
+     1>Project "K:\Visual Studio 2013\Projects\Assignment3\Assignment3\Assignment3.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinc\ /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"bin\Win32\Debug\\" /Fd"bin\Win32\Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt src\main.cpp
+         main.cpp
+     1>c1xx : fatal error C1083: Cannot open source file: 'src\main.cpp': No such file or directory
+     1>Done Building Project "K:\Visual Studio 2013\Projects\Assignment3\Assignment3\Assignment3.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.39
