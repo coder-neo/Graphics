@@ -1,0 +1,443 @@
+#include <windows.h>
+#include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <vector>
+#include <fstream>
+
+using namespace std;
+
+#define MODERN 
+#define M_PI 3.14159265358979323846
+//#define DEBUG
+#ifdef MODERN
+
+// include GLEW
+#include "glew/glew.h"
+
+// include GLFW
+#include "glfw/glfw3.h"
+GLFWwindow* window;
+double translateZ = 0.0f;
+double translateX = 0.0f;
+double translateY = 0.0f;
+double scale = 1.0f;
+//double translateZ = 1.437f;
+//double translateX = -0.1038f;
+//double translateY = -9.1874f;
+//double scale = 0.00707f;
+float rotate_angle = 45.0f;
+// include GLM
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "object.h"
+
+
+struct ShaderInfo {
+	GLuint programId;
+	GLuint vertexArray;
+	GLuint *vertexBuffer;
+	GLuint *indexBuffer;
+	GLuint *vNormalBuffer;
+	GLuint *vTextureBuffer;
+	GLuint *texImageBuffer;
+};
+
+//struct MaterialData{
+//	glm :: vec3 uAmbientVal;
+//	glm :: vec3 uDiffuseVal;
+//	glm :: vec3 uSpecularVal;
+//	float shininess;
+//};
+GLuint LoadShaders(const char* vertex_file_path, const char* fragment_file_path){
+
+	// Create the shaders
+	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+	GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+	// Read the Vertex Shader code from the file
+	std::string VertexShaderCode;
+	std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
+	if (VertexShaderStream.is_open()){
+		std::string Line = "";
+		while (getline(VertexShaderStream, Line))
+			VertexShaderCode += "\n" + Line;
+		VertexShaderStream.close();
+	}
+	else{
+		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
+		getchar();
+		return 0;
+	}
+
+	// Read the Fragment Shader code from the file
+	std::string FragmentShaderCode;
+	std::ifstream FragmentShaderStream(fragment_file_path, std::ios::in);
+	if (FragmentShaderStream.is_open()){
+		std::string Line = "";
+		while (getline(FragmentShaderStream, Line))
+			FragmentShaderCode += "\n" + Line;
+		FragmentShaderStream.close();
+	}
+
+
+
+	GLint Result = GL_FALSE;
+	int InfoLogLength;
+
+
+
+	// Compile Vertex Shader
+	printf("Compiling shader : %s\n", vertex_file_path);
+	char const * VertexSourcePointer = VertexShaderCode.c_str();
+	glShaderSource(VertexShaderID, 1, &VertexSourcePointer, NULL);
+	glCompileShader(VertexShaderID);
+
+	// Check Vertex Shader
+	glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0){
+		std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
+		glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+		printf("%s\n", &VertexShaderErrorMessage[0]);
+	}
+
+
+
+	// Compile Fragment Shader
+	printf("Compiling shader : %s\n", fragment_file_path);
+	char const * FragmentSourcePointer = FragmentShaderCode.c_str();
+	glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
+	glCompileShader(FragmentShaderID);
+
+	// Check Fragment Shader
+	glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0){
+		std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
+		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
+		printf("%s\n", &FragmentShaderErrorMessage[0]);
+	}
+
+
+
+	// Link the program
+	printf("Linking program\n");
+	GLuint ProgramID = glCreateProgram();
+	glAttachShader(ProgramID, VertexShaderID);
+	glAttachShader(ProgramID, FragmentShaderID);
+	glLinkProgram(ProgramID);
+
+	// Check the program
+	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
+	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0){
+		std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
+		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+		printf("%s\n", &ProgramErrorMessage[0]);
+	}
+
+	glDeleteShader(VertexShaderID);
+	glDeleteShader(FragmentShaderID);
+
+	return ProgramID;
+}
+
+
+
+
+/**
+* Program initialization.
+*/
+void init(ShaderInfo& info, Object &object) {
+
+
+	glGenVertexArrays(1, &info.vertexArray);
+	glBindVertexArray(info.vertexArray);
+
+	// create and compile our GLSL program from the shaders
+	info.programId = LoadShaders("shaders/vs.glsl", "shaders/fs.glsl");
+
+
+	size_t i = 0;
+	int t;
+	for (i = 0; i < object.shapes.size(); i++)
+	{
+
+		glGenBuffers(1, &info.vertexBuffer[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, info.vertexBuffer[i]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*object.shapes[i].mesh.positions.size(), &object.shapes[i].mesh.positions[0], GL_STATIC_DRAW);
+
+		glGenBuffers(1, &info.indexBuffer[i]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info.indexBuffer[i]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*object.shapes[i].mesh.indices.size(), &object.shapes[i].mesh.indices[0], GL_STATIC_DRAW);
+		
+		glGenBuffers(1, &info.vNormalBuffer[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, info.vNormalBuffer[i]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*object.shapes[i].mesh.normals.size(), &object.shapes[i].mesh.normals[0], GL_STATIC_DRAW);
+
+		if (object.getTextureIndex(i) != -1)
+		{
+			glGenBuffers(1, &info.vTextureBuffer[i]);
+			glBindBuffer(GL_ARRAY_BUFFER, info.vTextureBuffer[i]);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*object.shapes[i].mesh.texcoords.size(), &object.shapes[i].mesh.texcoords[0], GL_STATIC_DRAW);
+
+			glGenTextures(1, &info.texImageBuffer[i]);
+
+
+			glBindTexture(GL_TEXTURE_2D, info.texImageBuffer[i]);
+
+			t = object.getTextureIndex(i);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, object.objectTextureData[t].imageWidth, object.objectTextureData[t].imageWidth, 0, GL_RGB, GL_UNSIGNED_BYTE, object.objectTextureData[t].textureImage);
+			//SOIL_free_image_data(object.objectTextureData[t].textureImage);
+			// Nice trilinear filtering.
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		
+	}
+	
+
+}
+
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+	// When a user presses the escape key, we set the WindowShouldClose property to true, 
+	// closing the application
+	if (key == GLFW_KEY_ESCAPE && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		translateX += -0.1;
+	if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		translateX += 0.1;
+	if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		translateY += -0.1;
+	if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		translateY += 0.1;
+	if (key == GLFW_KEY_LEFT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		translateZ += -1;
+	if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		translateZ += 1;
+	if (key == GLFW_KEY_Q && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		rotate_angle = int(rotate_angle + 5) % 360;
+	if (key == GLFW_KEY_X && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		scale *= 0.8;
+	if (key == GLFW_KEY_Z && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		scale *= 1.2;
+}
+GLuint vertexbuffer;
+
+
+
+void render(ShaderInfo &info, Object &object)
+{
+
+		 glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+	
+		 // Or, for an ortho camera :
+		 //glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+		
+		 // LookAt matrix
+		 glm::mat4 viewScaled = glm::scale(glm::mat4(1.0f), glm::vec3(scale, scale, scale));
+		 glm::mat4 rotateMatrix = glm::rotate(viewScaled, rotate_angle, glm::vec3(0, 1, 0));
+		 glm::mat4 modelMatrix = glm::translate(rotateMatrix, glm::vec3(translateX, translateY, translateZ));
+		 glm::mat4 viewMatrix = glm::lookAt(glm::vec3(0,0,8),  glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+		 //glm::mat4 modelMatrix = glm::mat4(1.0f);
+		 //glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 1.0f));
+		 
+		 glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix; 
+		
+		 glm :: mat4 mvMatrix = viewMatrix * modelMatrix;
+		 glm :: mat4 normalMatrix = glm::transpose(glm::inverse(mvMatrix));
+		  
+	// Use our shader
+	glUseProgram(info.programId);
+
+	//MaterialData mMaterialInfo;
+	GLuint mvpUniform = glGetUniformLocation(info.programId, "mvpMatrix");
+	GLuint mvUniform = glGetUniformLocation(info.programId, "mvMatrix");
+	GLuint normalMatUniform = glGetUniformLocation(info.programId, "uNMatrix");
+	GLuint ambientUniform = glGetUniformLocation(info.programId, "materialInfo.uAmbientVal");
+	GLuint diffuseUniform = glGetUniformLocation(info.programId, "materialInfo.uDiffuseVal");
+	GLuint specularUniform = glGetUniformLocation(info.programId, "materialInfo.uSpecularVal");
+	GLuint shininessUniform = glGetUniformLocation(info.programId, "materialInfo.shininess");
+	GLuint textureID  = glGetUniformLocation(info.programId, "uSampler");
+	
+	glm::vec3 tempVec;
+#ifdef DEBUG
+	if (mvpUniform == -1)
+	{
+		std::cout << "Problem with mvpUniform in shader" << endl;
+	}
+	
+	if (mvUniform == -1)
+	{
+		std::cout << "Problem with mvUniform in shader" << endl;
+	}
+	
+	if (normalMatUniform == -1)
+	{
+		std::cout << "Problem with normalMatUniform in shader" << endl;
+	}
+	
+	if (ambientUniform == -1)
+	{
+		std::cout << "Problem with ambientUniform in shader" << endl;
+	}
+	
+	if (diffuseUniform == -1)
+	{
+		std::cout << "Problem with diffuseUniform in shader" << endl;
+	}
+	
+	if (specularUniform == -1)
+	{
+		std::cout << "Problem with specularUniform in shader" << endl;
+	}
+	
+	if (shininessUniform == -1)
+	{
+		std::cout << "Problem with shininessUniform in shader" << endl;
+	}
+#endif
+	glm::vec3 myColor = glm::vec3(0.3, 0.0,0.0);
+	glUniformMatrix4fv(mvpUniform, 1, GL_FALSE, &mvpMatrix[0][0]);
+	glUniformMatrix4fv(mvUniform, 1, GL_FALSE, &mvMatrix[0][0]);
+	glUniformMatrix4fv(normalMatUniform, 1, GL_FALSE, &normalMatrix[0][0]);
+	size_t i = 0;
+	for (; i < object.shapes.size(); i++)
+	{
+
+		
+		//glUniform3fv(ambientUniform, 1, &myColor[0]);
+		//glUniform3fv(diffuseUniform, 1, &myColor[0]);
+		//glUniform3fv(specularUniform, 1, &myColor[0]);
+		glUniform3fv(ambientUniform, 1, &object.materials[object.shapes[i].mesh.material_ids[0]].ambient[0]);
+		glUniform3fv(diffuseUniform, 1, &object.materials[object.shapes[i].mesh.material_ids[0]].diffuse[0]);
+		glUniform3fv(specularUniform, 1, &object.materials[object.shapes[i].mesh.material_ids[0]].specular[0]);
+		glUniform1f(shininessUniform,object.materials[object.shapes[i].mesh.material_ids[0]].shininess);
+
+		
+
+	// 1rst attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	//Send vertex Data
+	glBindBuffer(GL_ARRAY_BUFFER, info.vertexBuffer[i]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	//Send vertex normal Data
+	glBindBuffer(GL_ARRAY_BUFFER, info.vNormalBuffer[i]);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	
+	if (object.getTextureIndex(i) != -1)
+	{
+		//Send vertex texture Data
+		glBindBuffer(GL_ARRAY_BUFFER, info.vTextureBuffer[i]);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, info.texImageBuffer[i]);
+		glUniform1i(textureID, 0);
+		glUniform1i(glGetUniformLocation(info.programId,"textureEnabled"), 1);
+	}
+	else
+	{
+		glUniform1i(glGetUniformLocation(info.programId, "textureEnabled"), 0);
+		glDisableVertexAttribArray(2);
+	}
+	// Draw the triangle !
+	//Send vertex index Data
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,info.indexBuffer[i]);
+	glDrawElements(GL_TRIANGLES, object.shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, 0); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+	//getchar();
+
+	}
+}
+
+int main(int argc, char** argv) {
+	ShaderInfo info;
+
+	// initialize GLFW
+	if (!glfwInit()) {
+		fprintf(stderr, "Failed to initialize GLFW!\n");
+		return -1;
+	}
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+	// open a window and create its OpenGL context
+	window = glfwCreateWindow(800, 600, "Khul Ja Sim Sim", nullptr, nullptr);
+	if (window == nullptr)
+	{
+		cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
+	glfwMakeContextCurrent(window);
+
+
+	
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK)
+	{
+		cerr << "Failed to initialize GLEW" << std::endl;
+		return -1;
+	}
+
+
+
+	// load shaders and bind arrays
+	info.programId = NULL; 	info.vertexArray = NULL; 	info.vNormalBuffer = NULL; info.vTextureBuffer = NULL; info.texImageBuffer = NULL;
+	std::string objFile = "obj/cube.obj";
+	std::string mtlFile = "obj/";
+	Object cubeObject(objFile, mtlFile);
+	cubeObject.toString();
+	
+	int shapeCount = cubeObject.shapes.size();
+
+	//Create Bufffers
+	info.vertexBuffer = new GLuint[shapeCount];
+	info.indexBuffer = new GLuint[shapeCount];
+	info.vNormalBuffer = new GLuint[shapeCount];
+	info.vTextureBuffer = new GLuint[shapeCount];
+	info.texImageBuffer = new GLuint[shapeCount];
+
+	//Initialize buffers
+	init(info, cubeObject);
+	
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS); 
+	glViewport(0, 0, 800, 600);
+	glClearColor(0.f, 0.f, 0.f, 0.f);
+	glfwSetKeyCallback(window, key_callback);
+	while (glfwWindowShouldClose(window) == 0)
+	{
+		glfwPollEvents();
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		render(info,cubeObject);
+		glfwSwapBuffers(window);
+	}
+
+	
+	glfwTerminate();
+
+	return 0;
+}
+
+#endif
+
