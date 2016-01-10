@@ -1,0 +1,69 @@
+# OBJ file for Ben Watson's Ray Tracing Project
+# Complaints to Dave Crist  :)
+#  davecrist@mac.com
+
+
+mtllib cube2.mtl
+
+#g
+v -0.5 -0.5 3
+v -0.5 0.5 3
+v 0.5 0.5 3
+v 0.5 -0.5 3
+v -0.5 -0.5 1
+v -0.5 0.5 1
+v 0.5 0.5 1
+v 0.5 -0.5 1
+
+v 0.05 .999 1.95
+v -0.05 .999 1.95
+v 0.05 .999 2.05
+v -0.05 .999 2.05
+
+g top
+s off
+f 6 7 2
+f 7 3 2
+
+g far
+s off
+f 2 3 1
+f 3 4 1
+
+g bottom
+s off
+f 4 8 1
+f 8 5 1
+
+g gray_right
+s off
+f 3 7 4
+f 7 8 4
+
+g gray_left
+s off
+f 6 2 5
+f 2 1 5
+
+
+#we don't want the front
+#g front
+#f 7 6 8
+#f 6 5 8
+
+
+group gray_left
+usemtl gray_left
+
+group gray_right
+usemtl gray_right
+
+group top
+usemtl top
+
+group far
+usemtl far
+
+group bottom
+usemtl bottom
+

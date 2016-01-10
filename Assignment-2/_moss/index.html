@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen" />	
+	<script type="text/javascript" src="js/gl-matrix-min.js"></script>
+	<script id="shader-vs" type="x-shader/x-vertex">
+		
+		attribute vec3 aVertexPosition;
+		attribute vec3 aVertexNormal;
+		attribute vec3 aVertexKA;
+		attribute vec3 aVertexKD;
+		attribute vec3 aVertexKS;
+		attribute vec2 aTexCoordinate;
+		attribute float aN;
+		attribute float aTextureIndex;
+		
+		uniform vec3 aEyeVector;
+		uniform vec3 aLightVector;
+		
+		uniform vec3 aLightPositions[5];
+		uniform vec3 aAmbientLights[5];
+		uniform vec3 aDiffuseLights[5];
+		uniform vec3 aSpecularLights[5];
+
+
+		uniform mat4 uMVMatrix;
+    	uniform mat4 uPMatrix;
+    	uniform mat4 uLMatrix;
+    	uniform mat3 uNMatrix;
+
+    	varying vec4 vColor;
+    	varying highp vec2 vTexCoordinate;
+    	varying float vTexIndex;
+
+		void main(void) {
+			
+			gl_Position =   uPMatrix * uMVMatrix *  vec4(aVertexPosition, 1);
+			vTexIndex = aTextureIndex;
+
+			if(vTexIndex > -1.0)
+				vTexCoordinate = aTexCoordinate;
+			vec3 transformedNormal;
+			vec3 lightVec;
+			vec3 dirVec;
+			vec3 halfVector;
+			vec3 color ;
+			//For debugging shader code
+			vec3 tempVec = vec3(0.8,0.2,0.2);
+			vec3 tempVec1 = vec3(0.588,0.588,0.588);
+			float val1,val2;
+
+			// Loop through all the lights
+			for (int i = 0; i < 5; i++) {
+				
+			
+			 transformedNormal = normalize(uNMatrix * aVertexNormal);
+			// vec3 templightvec = vec3(0,5,9);
+			 lightVec = normalize(aLightPositions[i] - vec3(gl_Position));
+			// vec3 tempeyevec = vec3(0,0,8);
+			 dirVec = normalize(aEyeVector - vec3(gl_Position));
+			 halfVector = normalize(lightVec + dirVec);
+			// float La = 0.3, Ld = 0.5, Ls = 0.3;
+			 val1 = dot(transformedNormal,lightVec);
+			 val2 = pow(dot(transformedNormal,halfVector),aN);
+			if(val1 < 0.0)
+				val1 = val2 = 0.0;
+			if(val2 < 0.0)
+				val2 = 0.0;
+
+		
+			
+			
+			color.x += ((aVertexKA.x * aAmbientLights[i].x +  val1 * aVertexKD.x * aDiffuseLights[i].x + val2*aVertexKS.x * aSpecularLights[i].x));
+			color.y += ((aVertexKA.y * aAmbientLights[i].y +  val1 * aVertexKD.y * aDiffuseLights[i].y + val2*aVertexKS.y * aSpecularLights[i].y));
+			color.z += ((aVertexKA.z * aAmbientLights[i].z +  val1 * aVertexKD.z * aDiffuseLights[i].z + val2*aVertexKS.z * aSpecularLights[i].z));
+			
+		}
+			  vColor = vec4(color,1);
+		}
+	</script>
+	<script id="shader-fs" type="x-shader/x-fragment">
+
+		precision mediump float;
+		
+		varying vec4 vColor;
+		varying highp vec2 vTexCoordinate;
+		varying float vTexIndex;
+		uniform sampler2D uSampler1;
+		uniform sampler2D uSampler2;
+		void main(void) {
+			if(vTexIndex < 0.0)
+				gl_FragColor = vColor;
+			else if(vTexIndex > 0.0)
+				gl_FragColor = vColor * texture2D(uSampler2, vec2(vTexCoordinate.s, vTexCoordinate.t));
+			else 
+				gl_FragColor = vColor * texture2D(uSampler1, vec2(vTexCoordinate.s, vTexCoordinate.t));
+			// else
+			// 	gl_FragColor = vec4(1,1,1,1);
+		}	
+	</script>	
+	<script type="text/javascript" src="js/main.js"></script>
+	<script type="text/javascript" src="js/scene.js"></script>
+	<title>Assignment 2</title>	
+</head>
+<body >
+<canvas id="canvas-rz" width="1280" height="720" color=""></canvas>
+</body>
+</html>

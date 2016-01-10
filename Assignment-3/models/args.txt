@@ -1,0 +1,4 @@
+chrome.exe --user-data-dir="C:/Temp-Chrome-Dev" --disable-web-security
+
+window 800 600
+loadOBJ car.obj

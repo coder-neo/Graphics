@@ -1,0 +1,119 @@
+html, body {
+	margin:0px;
+	min-height: 1200px;
+}
+
+#container {
+	padding:10px;
+	width:1280px; 
+	height: 720px;
+	margin-top: 25px;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+#logo {
+	padding: 3px;
+	width: 137px;
+	height: 23px;
+	background-image: url('../images/logo.jpg');
+	background-repeat: no-repeat;
+}
+
+#tree {
+	width: 1280px;
+	height: 720px;
+	border-style:solid;
+	border-width: 1px;
+	border-color: #CCC;
+}
+
+#buttons {
+	padding-top:5px;
+	float:right;
+}
+
+#filterInput {
+	width: 300px;
+	height: 30px;
+	font-size: 18px;
+}
+
+#accordion {
+	margin-top: 40px;
+	font-size: 11pt;
+}
+
+#accordion h3 { 
+	font-size: 20px;
+	padding-top: 3px;
+	padding-left: 30px;
+}
+
+.tableOdd {
+	margin: 4px;
+	font-size: 11pt;
+	background-color: #E1EAED;
+	border: 10px solid white;
+}
+
+.tableEven {
+	margin: 4px;
+	font-size: 11pt;
+	background-color: #F2F2F2;
+	border: 5px solid white;
+}
+
+.infoMessage {
+	padding-top: 20px;
+	padding-left: 10px;
+	font-family:sans-serif;
+	font-size: 11px;
+	width: 700px;
+	height: 40px;
+	font-size: 18px;
+	color: #0175a4;
+}
+
+.errorMessage {
+	padding-top: 20px;
+	padding-left: 10px;
+	font-family:sans-serif;
+	font-size: 11px;
+	width: 700px;
+	height: 40px;
+	font-size: 18px;
+	color: #F78F4A;
+}
+
+.node {
+	cursor: pointer;
+}
+
+.nodeText {
+	font-family:sans-serif;
+	font-weight: bold;
+}
+
+.nodeLabel {
+	font-family:sans-serif;
+	font-weight: bold;
+}
+
+.link {
+	fill: none;
+	stroke: #ccc;
+	stroke-width: 1.5px;
+}
+
+.templink {
+	fill: none;
+	stroke: red;
+	stroke-width: 3px;
+}
+
+.highlightCircle{
+	fill: #D65A5A;
+}
+
+

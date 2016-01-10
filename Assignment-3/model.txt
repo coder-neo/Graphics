@@ -1,0 +1,39 @@
+objModel NOOBJ
+transform IDENTITY
+child 3
+
+objModel earth.obj
+transform 0.006 0 0 0 0 0.006 0 0 0 0 0.006 0 2 2.5 0 1
+child 1
+
+objModel earth2.obj
+transform 1 0 0 0 0 1 0 0 0 0 1 0 -400 0 0 1
+child 0
+
+objModel vase.obj
+transform 0.2 0 0 0 0 0.2 0 0 0 0 0.2 0 4 4 0 1
+child 2
+
+objModel vase.obj
+transform 1 0 0 0 0 1 0 0 0 0 1 0 -10 0 0 1
+child 0
+
+objModel vase.obj
+transform 1 0 0 0 0 1 0 0 0 0 1 0 10 0 0 1
+child 0
+
+objModel head.obj
+transform 0.2 0 0 0 0 0.2 0 0 0 0 0.2 0 -4 4 0 1
+child 1
+
+objModel head.obj
+transform 1 0 0 0 0 1 0 0 0 0 1 0 10 0 0 1
+child 0
+
+
+
+
+
+
+
+

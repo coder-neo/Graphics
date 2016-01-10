@@ -1,0 +1,26 @@
+window 256 256
+
+#For cube render time roughly 1 sec(Multiple files)
+#loadOBJ cube.obj cube2.obj
+#scale 1
+
+#For cube render time roughly 1 sec
+#loadOBJ cube.obj
+#scale 1
+
+#For dolphins render time roughly around 40 sec.
+#loadOBJ dolphins.obj
+#scale 300
+
+light 0 5 0 
+light 0 -5 0 
+light 0 2 -2 
+
+
+#For earth(sphere) render time roughly around 40 sec.
+#loadOBJ earth.obj
+#scale 150
+
+#For deer render time roughly around 40 sec.
+loadOBJ deer-obj.obj
+scale 12
